@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SaveOver.AmnesiaDarkDescent (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SaveOver.AmnesiaDarkDescent (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
