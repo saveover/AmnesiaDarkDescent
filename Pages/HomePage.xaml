@@ -131,31 +131,58 @@
                         </StackPanel>
 
                         <Border x:Name="WorkspaceVisualPanel"
-                                Grid.Column="1"
-                                Padding="24"
-                                MinHeight="240"
-                                Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                CornerRadius="12">
+                            Grid.Column="1"
+                            Padding="24"
+                            MinHeight="240"
+                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                            CornerRadius="12">
                             <StackPanel Spacing="18">
-                                <Border Width="48" Height="48" CornerRadius="12"
-                                        Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                        HorizontalAlignment="Left">
-                                    <FontIcon Glyph="&#xE72E;" FontSize="22"
-                                              Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              AutomationProperties.AccessibilityView="Raw"/>
+                                <Border Width="48"
+                                    Height="48"
+                                    CornerRadius="12"
+                                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                    HorizontalAlignment="Left">
+                                    <FontIcon Glyph="&#xE72E;"
+                                          FontSize="22"
+                                          Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          AutomationProperties.AccessibilityView="Raw"/>
                                 </Border>
-                                <TextBlock Text="Safe by default"
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Safe by default"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
-                                <TextBlock Text="SaveOver validates the player structure, backs up the original, and replaces the save atomically."
+                                    <TextBlock Text="SaveOver protects the original before applying your edits."
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap"/>
-                                <StackPanel Orientation="Horizontal" Spacing="9">
-                                    <SymbolIcon Symbol="Accept"
-                                                Foreground="{ThemeResource SystemFillColorSuccessBrush}"
-                                                AutomationProperties.AccessibilityView="Raw"/>
-                                    <TextBlock Text="Unknown XML stays untouched" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Spacing="10">
+                                    <StackPanel Orientation="Horizontal" Spacing="9">
+                                        <FontIcon Glyph="&#xE73E;"
+                                              FontSize="13"
+                                              Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                              AutomationProperties.AccessibilityView="Raw"/>
+                                        <TextBlock Text="Validates before opening"
+                                               Style="{StaticResource CaptionTextBlockStyle}"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="9">
+                                        <FontIcon Glyph="&#xE73E;"
+                                              FontSize="13"
+                                              Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                              AutomationProperties.AccessibilityView="Raw"/>
+                                        <TextBlock Text="Creates a timestamped backup"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="9">
+                                        <FontIcon Glyph="&#xE73E;"
+                                              FontSize="13"
+                                              Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                              AutomationProperties.AccessibilityView="Raw"/>
+                                        <TextBlock Text="Replaces the file atomically"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               TextWrapping="Wrap"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -188,10 +215,31 @@
                                        Style="{StaticResource MonospaceTextBlockStyle}"
                                        TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-                        <Button Grid.Column="2"
-                                Content="Open folder"
-                                Click="OpenSaveFolderButton_Click"
-                                AutomationProperties.Name="Open Amnesia save folder"/>
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Spacing="8">
+                            <Button Content="Open folder"
+                                    Click="OpenSaveFolderButton_Click"
+                                    AutomationProperties.Name="Open Amnesia save folder"/>
+                            <Button x:Name="CopyPathButton"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Click="CopyPathButton_Click"
+                                    AutomationProperties.Name="Copy save folder path"
+                                    ToolTipService.ToolTip="Copy path to clipboard">
+                                <Grid>
+                                    <FontIcon Glyph="&#xE8C8;"
+                                              FontSize="14"
+                                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                              AutomationProperties.AccessibilityView="Raw"/>
+                                    <FontIcon Glyph="&#xE73E;"
+                                              FontSize="14"
+                                              Opacity="0"
+                                              Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                              AutomationProperties.AccessibilityView="Raw"/>
+                                </Grid>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </Border>
 
@@ -217,6 +265,84 @@
                             </StackPanel>
                         </Grid>
                     </StackPanel>
+                </Border>
+
+                <InfoBar IsOpen="True"
+                         Severity="Warning"
+                         IsClosable="False"
+                         Title="Edit carefully"
+                         Message="SaveOver creates backups, but game saves can still be sensitive to unexpected values. Review your changes before saving.">
+                    <InfoBar.ActionButton>
+                        <HyperlinkButton Content="View licence"
+                                         NavigateUri="https://github.com/saveover/AmnesiaDarkDescent/blob/master/LICENSE.txt"/>
+                    </InfoBar.ActionButton>
+                </InfoBar>
+
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <Grid ColumnSpacing="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup>
+                                <VisualState x:Name="CompactSupport">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="0"/>
+                                    </VisualState.StateTriggers>
+                                    <VisualState.Setters>
+                                        <Setter Target="SupportActionPanel.(Grid.Row)" Value="1"/>
+                                        <Setter Target="SupportActionPanel.(Grid.Column)" Value="0"/>
+                                        <Setter Target="SupportActionPanel.Margin" Value="0,16,0,0"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="WideSupport">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="800"/>
+                                    </VisualState.StateTriggers>
+                                    <VisualState.Setters>
+                                        <Setter Target="SupportActionPanel.(Grid.Row)" Value="0"/>
+                                        <Setter Target="SupportActionPanel.(Grid.Column)" Value="1"/>
+                                        <Setter Target="SupportActionPanel.Margin" Value="0"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Built in the open"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       AutomationProperties.HeadingLevel="Level2"/>
+                            <TextBlock Text="SaveOver is free and open source. Contributions, useful bug reports, and donations all help it improve."
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <StackPanel x:Name="SupportActionPanel"
+                                    Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Spacing="10">
+                            <HyperlinkButton NavigateUri="https://github.com/saveover/AmnesiaDarkDescent">
+                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <FontIcon Glyph="&#xE8A7;"
+                                              FontSize="15"
+                                              AutomationProperties.AccessibilityView="Raw"/>
+                                    <TextBlock Text="GitHub"/>
+                                </StackPanel>
+                            </HyperlinkButton>
+                            <Button Click="SupportButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <FontIcon Glyph="&#xEB51;"
+                                              FontSize="15"
+                                              AutomationProperties.AccessibilityView="Raw"/>
+                                    <TextBlock Text="Support"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
                 </Border>
             </StackPanel>
         </ScrollView>

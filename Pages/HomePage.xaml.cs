@@ -18,13 +18,16 @@ namespace SaveOver.AmnesiaDarkDescent.Pages;
 
 public sealed partial class HomePage : Page
 {
+    private readonly CopyIconFeedback copyFeedback = new();
     private readonly ILogger<HomePage> logger = App.LoggerFactory.CreateLogger<HomePage>();
+    private readonly object copyTooltip;
     private bool isBusy;
     private bool startupResumePromptHandled;
 
     public HomePage()
     {
         InitializeComponent();
+        copyTooltip = ToolTipService.GetToolTip(CopyPathButton);
         App.CurrentSaveData.SaveDataChanged += OnSessionChanged;
         App.CurrentSaveData.DirtyStateChanged += OnSessionChanged;
         Loaded += HomePage_Loaded;
@@ -66,16 +69,32 @@ public sealed partial class HomePage : Page
             string content = await FileHelper.LoadSaveFileAsync(filePath);
             PlayerData player = await Task.Run(() => AmnesiaSaveCodec.Parse(content));
             App.CurrentSaveData.Load(filePath, content, player);
+            List<string> adjustedValues = ClampPlayerValues(player);
             if (SaveSettings.RememberLastOpenedSave)
             {
                 SaveSettings.LastOpenedSavePath = filePath;
             }
 
-            OperationInfoBar.Severity = InfoBarSeverity.Success;
-            OperationInfoBar.Title = "Save opened";
-            OperationInfoBar.Message = "Character editing is now available.";
+            OperationInfoBar.Severity = adjustedValues.Count == 0
+                ? InfoBarSeverity.Success
+                : InfoBarSeverity.Warning;
+            OperationInfoBar.Title = adjustedValues.Count == 0
+                ? "Save opened"
+                : "Out-of-range values adjusted";
+            OperationInfoBar.Message = adjustedValues.Count == 0
+                ? "Character editing is now available."
+                : $"Adjusted {string.Join("; ", adjustedValues)}. Review and save these changes to update the file.";
             OperationInfoBar.IsOpen = true;
-            logger.LogInformation("A save file was loaded successfully.");
+            if (adjustedValues.Count == 0)
+            {
+                logger.LogInformation("A save file was loaded successfully.");
+            }
+            else
+            {
+                logger.LogWarning(
+                    "A save file was loaded with out-of-range player values. Adjustments: {Adjustments}.",
+                    string.Join("; ", adjustedValues));
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
@@ -109,7 +128,10 @@ public sealed partial class HomePage : Page
         try
         {
             string updatedContent = await Task.Run(() => AmnesiaSaveCodec.Write(session.OriginalContent, session.Player));
-            await FileHelper.SaveSaveFileAsync(session.SourceFilePath, updatedContent);
+            await FileHelper.SaveSaveFileAsync(
+                session.SourceFilePath,
+                updatedContent,
+                session.OriginalContent);
             session.CommitSavedContent(updatedContent);
 
             OperationInfoBar.Severity = InfoBarSeverity.Success;
@@ -126,6 +148,41 @@ public sealed partial class HomePage : Page
         {
             SetBusy(false);
         }
+    }
+
+    private static List<string> ClampPlayerValues(PlayerData player)
+    {
+        List<string> adjustments = [];
+
+        double health = Math.Clamp(player.Health, 0d, 100d);
+        if (health != player.Health)
+        {
+            adjustments.Add($"Health from {player.Health:G} to {health:G}");
+            player.Health = health;
+        }
+
+        double sanity = Math.Clamp(player.Sanity, 0d, 100d);
+        if (sanity != player.Sanity)
+        {
+            adjustments.Add($"Sanity from {player.Sanity:G} to {sanity:G}");
+            player.Sanity = sanity;
+        }
+
+        double lampOil = Math.Clamp(player.LampOil, 0d, 100d);
+        if (lampOil != player.LampOil)
+        {
+            adjustments.Add($"Lamp oil from {player.LampOil:G} to {lampOil:G}");
+            player.LampOil = lampOil;
+        }
+
+        int tinderboxes = Math.Max(player.Tinderboxes, 0);
+        if (tinderboxes != player.Tinderboxes)
+        {
+            adjustments.Add($"Tinderboxes from {player.Tinderboxes} to {tinderboxes}");
+            player.Tinderboxes = tinderboxes;
+        }
+
+        return adjustments;
     }
 
     private async void HomePage_Loaded(object sender, RoutedEventArgs e)
@@ -235,6 +292,27 @@ public sealed partial class HomePage : Page
             ShowError("Couldn't open the save folder", ex);
         }
     }
+
+    private void CopyPathButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            DataPackage package = new();
+            package.SetText(BackupSettings.GameSaveFolderPath);
+            Clipboard.SetContent(package);
+        }
+        catch (Exception ex)
+        {
+            ShowError("Couldn't copy the save folder path", ex);
+            return;
+        }
+
+        ToolTipService.SetToolTip(CopyPathButton, "Path copied!");
+        copyFeedback.Play(CopyPathButton, () => ToolTipService.SetToolTip(CopyPathButton, copyTooltip));
+    }
+
+    private void SupportButton_Click(object sender, RoutedEventArgs e) =>
+        App.StartupWindow?.NavigateToPageByTag("Donate");
 
     private async Task<bool> ConfirmDiscardChangesAsync()
     {

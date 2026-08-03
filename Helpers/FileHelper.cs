@@ -101,11 +101,20 @@ internal static class FileHelper
     internal static async Task SaveSaveFileAsync(
         string filePath,
         string content,
+        string expectedOriginalContent,
         bool createBackup = true,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentException.ThrowIfNullOrEmpty(content);
+        ArgumentException.ThrowIfNullOrEmpty(expectedOriginalContent);
+
+        string onDiskContent = await LoadSaveFileAsync(filePath, cancellationToken).ConfigureAwait(false);
+        if (!string.Equals(onDiskContent, expectedOriginalContent, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                "The save file changed on disk after it was opened. Reload it before saving so external changes are not overwritten.");
+        }
 
         if (createBackup)
         {

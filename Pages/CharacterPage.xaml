@@ -28,7 +28,7 @@
             <StackPanel Margin="36,16,36,40"
                         MaxWidth="{StaticResource PageContentMaxWidth}"
                         Spacing="20">
-                <TextBlock Text="Edit the values stored on Amnesia's player save object. No undocumented limits are imposed."
+                <TextBlock Text="Health, sanity, and lamp oil use the game's 0–100 range. Tinderboxes use the save format's non-negative 32-bit integer range."
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            TextWrapping="Wrap"/>
 
@@ -67,14 +67,32 @@
 
                     <Border x:Name="ConditionCard" Style="{StaticResource CardBorderStyle}">
                         <StackPanel Spacing="16">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Condition"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"
-                                           AutomationProperties.HeadingLevel="Level2"/>
-                                <TextBlock Text="Player health and sanity."
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           TextWrapping="Wrap"/>
-                            </StackPanel>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Condition"
+                                               Style="{StaticResource SubtitleTextBlockStyle}"
+                                               AutomationProperties.HeadingLevel="Level2"/>
+                                    <TextBlock Text="Player health and sanity."
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            Spacing="8">
+                                    <Button Content="Min"
+                                            Click="ConditionMinimumButton_Click"
+                                            AutomationProperties.Name="Set health and sanity to minimum"
+                                            ToolTipService.ToolTip="Set health and sanity to 0"/>
+                                    <Button Content="Max"
+                                            Click="ConditionMaximumButton_Click"
+                                            AutomationProperties.Name="Set health and sanity to maximum"
+                                            ToolTipService.ToolTip="Set health and sanity to 100"/>
+                                </StackPanel>
+                            </Grid>
 
                             <NumberBox Header="&#x2764; Health"
                                        SpinButtonPlacementMode="Inline"
@@ -93,14 +111,32 @@
 
                     <Border x:Name="ResourcesCard" Grid.Column="1" Style="{StaticResource CardBorderStyle}">
                         <StackPanel Spacing="16">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Resources"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"
-                                           AutomationProperties.HeadingLevel="Level2"/>
-                                <TextBlock Text="Lantern fuel and tinderboxes."
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           TextWrapping="Wrap"/>
-                            </StackPanel>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Resources"
+                                               Style="{StaticResource SubtitleTextBlockStyle}"
+                                               AutomationProperties.HeadingLevel="Level2"/>
+                                    <TextBlock Text="Lantern fuel and tinderboxes."
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            Spacing="8">
+                                    <Button Content="Min"
+                                            Click="ResourcesMinimumButton_Click"
+                                            AutomationProperties.Name="Set lamp oil and tinderboxes to minimum"
+                                            ToolTipService.ToolTip="Set lamp oil and tinderboxes to 0"/>
+                                    <Button Content="Max"
+                                            Click="ResourcesMaximumButton_Click"
+                                            AutomationProperties.Name="Set lamp oil and tinderboxes to maximum"
+                                            ToolTipService.ToolTip="Set lamp oil to 100 and tinderboxes to 2,147,483,647"/>
+                                </StackPanel>
+                            </Grid>
 
                             <NumberBox Header="&#x1F6E2; Lamp oil"
                                        SpinButtonPlacementMode="Inline"
@@ -111,7 +147,7 @@
                             <NumberBox Header="&#x1F56F; Tinderboxes"
                                        SpinButtonPlacementMode="Inline"
                                        Minimum="0"
-                                       Maximum="99"
+                                       Maximum="2147483647"
                                        ValidationMode="InvalidInputOverwritten"
                                        Value="{x:Bind Player.Tinderboxes, Mode=TwoWay, Converter={StaticResource Int32NumberConverter}}"/>
                         </StackPanel>

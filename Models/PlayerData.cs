@@ -6,9 +6,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace SaveOver.AmnesiaDarkDescent.Models;
 
 /// <summary>
-/// The four supported values stored directly beneath Amnesia's mPlayer save object. Values are not
-/// clamped here: unusual source saves must remain representable, and no undocumented game limits
-/// are invented by the editor.
+/// The four supported values stored directly beneath Amnesia's mPlayer save object. Range
+/// correction occurs after the model is attached to a save session so a corrected source save is
+/// visibly marked as changed rather than being normalized silently during parsing.
 /// </summary>
 public sealed partial class PlayerData : ObservableObject
 {

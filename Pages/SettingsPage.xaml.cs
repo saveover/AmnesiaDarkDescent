@@ -49,8 +49,24 @@ public sealed partial class SettingsPage : Page
         AboutExpander.Description = assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? string.Empty;
     }
 
-    private async void ReportIssueCard_Click(object sender, RoutedEventArgs e) =>
-        await Launcher.LaunchUriAsync(new Uri("https://github.com/saveover/AmnesiaDarkDescent/issues"));
+    private async void ReportIssueCard_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (await Launcher.LaunchUriAsync(new Uri("https://github.com/saveover/AmnesiaDarkDescent/issues")))
+            {
+                return;
+            }
+
+            ShowReportIssueLaunchFailure();
+            logger.LogWarning("Windows declined the request to open the issue tracker.");
+        }
+        catch (Exception ex)
+        {
+            ShowReportIssueLaunchFailure();
+            logger.LogError(ex, "Could not open the issue tracker.");
+        }
+    }
 
     private void NavigationStyleComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
         NavigationStyleHelper.IsTopStyle = NavigationStyleComboBox.SelectedIndex == 1;
@@ -263,6 +279,10 @@ public sealed partial class SettingsPage : Page
     /// page doesn't count as the user choosing a theme.
     /// </summary>
     private void SelectStoredTheme() => ThemeComboBox.SelectedValue = ThemeHelper.RootTheme.ToString();
+
+    private void ShowReportIssueLaunchFailure() =>
+        ReportIssueCard.Description =
+            "Windows could not open GitHub. Open github.com/saveover/AmnesiaDarkDescent/issues in your browser.";
 
     private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

@@ -57,9 +57,7 @@ internal static class AmnesiaSaveCodec
         SetDoubleIfChanged(player, "mfLampOil", playerData.LampOil);
         SetInt32IfChanged(player, "mlTinderboxes", playerData.Tinderboxes);
 
-        string updatedContent = document.ToString(SaveOptions.DisableFormatting);
-        _ = ParseDocument(updatedContent);
-        return updatedContent;
+        return document.ToString(SaveOptions.DisableFormatting);
     }
 
     private static XDocument ParseDocument(string content)
