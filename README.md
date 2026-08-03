@@ -8,7 +8,7 @@
 **Free, open-source tools for editing game saves—built with care for the files behind your progress.**
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/saveover/AmnesiaDarkDescent/release.yml)
-[![Latest release](https://img.shields.io/github/v/release/saveover/AmnesiaDarkDescent)](https://github.com/saveover/AmnesiaDarkDescent/releases/latest)
+[![GitHub Release](https://img.shields.io/github/v/release/saveover/AmnesiaDarkDescent)](https://github.com/saveover/AmnesiaDarkDescent/releases/latest)
 [![GitHub License](https://img.shields.io/github/license/saveover/AmnesiaDarkDescent)](LICENSE.txt)
 [![Windows](https://img.shields.io/badge/platform-Windows-0078D4?logo=windows)](#requirements)
 [![Discord](https://img.shields.io/discord/1529883189861158923?logo=discord&logoColor=white&color=%235865F2)](https://discord.gg/nzQSeGcta8)
