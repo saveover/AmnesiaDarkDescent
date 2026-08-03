@@ -1,0 +1,81 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 SaveOver
+
+using System;
+using System.IO;
+
+namespace SaveOver.AmnesiaDarkDescent.Helpers;
+
+/// <summary>
+/// Keeps backup policy independent from the settings page. The default deliberately lives outside
+/// the game's Steam Cloud tree so retention cleanup cannot fight cloud synchronization.
+/// </summary>
+internal static class BackupSettings
+{
+    private const string BackupFolderSettingKey = "BackupFolder";
+    private const string BackupRetentionSettingKey = "BackupRetention";
+    private const int DefaultRetentionCount = 10;
+
+    internal static string DefaultFolderPath { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SaveOver",
+        "AmnesiaDarkDescent",
+        "Backups");
+
+    internal static string GameSaveFolderPath { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        "Amnesia",
+        "Main");
+
+    internal static string FolderPath
+    {
+        get
+        {
+            string? storedPath = UserSettings.ReadString(BackupFolderSettingKey);
+            return !string.IsNullOrWhiteSpace(storedPath) && Path.IsPathFullyQualified(storedPath)
+                ? storedPath
+                : DefaultFolderPath;
+        }
+        set
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(value);
+            UserSettings.Write(BackupFolderSettingKey, Path.GetFullPath(value));
+        }
+    }
+
+    /// <summary>
+    /// Number of backups retained for each source save. Zero means that all backups are kept.
+    /// </summary>
+    internal static int RetentionCount
+    {
+        get
+        {
+            int value = UserSettings.ReadInt32(BackupRetentionSettingKey, DefaultRetentionCount);
+            return value is 0 or 5 or 10 or 20 ? value : DefaultRetentionCount;
+        }
+        set
+        {
+            if (value is not (0 or 5 or 10 or 20))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value));
+            }
+
+            UserSettings.Write(BackupRetentionSettingKey, value);
+        }
+    }
+
+    internal static bool IsGameSaveFolder
+    {
+        get
+        {
+            // A child folder is equally unsafe: Steam Cloud can still synchronize it beneath the
+            // managed game-save root.
+            string folder = Path.TrimEndingDirectorySeparator(Path.GetFullPath(FolderPath));
+            string gameFolder = Path.TrimEndingDirectorySeparator(Path.GetFullPath(GameSaveFolderPath));
+            return string.Equals(folder, gameFolder, StringComparison.OrdinalIgnoreCase) ||
+                   folder.StartsWith($"{gameFolder}{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    internal static void ResetFolder() => UserSettings.Remove(BackupFolderSettingKey);
+}

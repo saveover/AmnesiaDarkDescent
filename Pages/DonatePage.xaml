@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 SaveOver -->
+<Page
+    x:Class="SaveOver.AmnesiaDarkDescent.Pages.DonatePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:toolkit="using:CommunityToolkit.WinUI"
+    xmlns:pages="using:SaveOver.AmnesiaDarkDescent.Pages"
+    NavigationCacheMode="Enabled">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- The platform logos are fixed-colour brand artwork we can't recolour, and
+                     all three are dark-on-transparent. They sit on a light plate instead, so
+                     one asset set stays legible in either theme. The plate stays white even in
+                     high contrast for the same reason: the artwork won't follow system colours,
+                     so a dark plate would swallow it. -->
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush x:Key="BrandPlateBrush" Color="#FFFFFFFF"/>
+                    <SolidColorBrush x:Key="BrandPlateStrokeBrush" Color="#26000000"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="BrandPlateBrush" Color="#FFFFFFFF"/>
+                    <SolidColorBrush x:Key="BrandPlateStrokeBrush" Color="#14000000"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush x:Key="BrandPlateBrush" Color="#FFFFFFFF"/>
+                    <SolidColorBrush x:Key="BrandPlateStrokeBrush" Color="#FF000000"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <DataTemplate x:Key="PerkTemplate" x:DataType="x:String">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xE73E;" FontSize="12" Margin="0,3,0,0"
+                              VerticalAlignment="Top"
+                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                              AutomationProperties.AccessibilityView="Raw"/>
+                    <TextBlock Grid.Column="1"
+                               Text="{x:Bind}"
+                               TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="TierTemplate" x:DataType="pages:DonationTier">
+                <Border Style="{StaticResource CardBorderStyle}" Padding="20">
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{x:Bind Name}"
+                                       Style="{StaticResource BodyStrongTextBlockStyle}"
+                                       AutomationProperties.HeadingLevel="Level3"/>
+                            <TextBlock Text="{x:Bind Price}"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="{x:Bind Summary}" TextWrapping="Wrap"/>
+
+                        <Border Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+
+                        <ItemsRepeater ItemsSource="{x:Bind Perks}"
+                                       ItemTemplate="{StaticResource PerkTemplate}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="8"/>
+                            </ItemsRepeater.Layout>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <!-- Hosts a tier card. The three hosts are named so the adaptive states below can
+                 move them; the card itself comes from the template. Tier cards stretch to the
+                 tallest of the row, so their contents sit at the top. -->
+            <Style x:Key="TierCardStyle" TargetType="ContentControl">
+                <Setter Property="ContentTemplate" Value="{StaticResource TierTemplate}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            </Style>
+
+            <DataTemplate x:Key="PlatformTemplate" x:DataType="pages:DonationPlatform">
+                <HyperlinkButton NavigateUri="{x:Bind Url}"
+                                 Padding="4"
+                                 CornerRadius="10"
+                                 AutomationProperties.Name="{x:Bind LinkLabel}"
+                                 ToolTipService.ToolTip="{x:Bind Name}">
+                    <Border Background="{ThemeResource BrandPlateBrush}"
+                            BorderBrush="{ThemeResource BrandPlateStrokeBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource OverlayCornerRadius}"
+                            Padding="16,10">
+                        <Image Height="32"
+                               Source="{x:Bind Logo}"
+                               AutomationProperties.AccessibilityView="Raw"/>
+                    </Border>
+                </HyperlinkButton>
+            </DataTemplate>
+
+            <!-- One wallet: the name sits above the address so a long address gets the full
+                 card width instead of being squeezed into a column. -->
+            <DataTemplate x:Key="WalletTemplate" x:DataType="pages:CryptoWallet">
+                <Border Style="{StaticResource InsetBorderStyle}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Image Width="20" Height="20"
+                                       Source="{x:Bind Icon}"
+                                       AutomationProperties.AccessibilityView="Raw"/>
+                                <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <TextBlock Text="{x:Bind Address}"
+                                       Style="{StaticResource MonospaceTextBlockStyle}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <!-- The two icons overlap and cross-fade on copy; the code-behind
+                             expects copy first, checkmark second. -->
+                        <Button Grid.Column="1"
+                                Style="{StaticResource IconButtonStyle}"
+                                VerticalAlignment="Center"
+                                Click="CopyAddressButton_Click"
+                                Tag="{x:Bind}"
+                                AutomationProperties.Name="{x:Bind CopyLabel}"
+                                ToolTipService.ToolTip="{x:Bind CopyLabel}">
+                            <Grid>
+                                <FontIcon Glyph="&#xE8C8;" FontSize="14"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          AutomationProperties.AccessibilityView="Raw"/>
+                                <FontIcon Glyph="&#xE73E;" FontSize="14" Opacity="0"
+                                          Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                          AutomationProperties.AccessibilityView="Raw"/>
+                            </Grid>
+                        </Button>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+
+            <!-- One off-app link, labelled with the "leaves the app" glyph. -->
+            <DataTemplate x:Key="HelpLinkTemplate" x:DataType="pages:HelpLink">
+                <HyperlinkButton NavigateUri="{x:Bind Url}"
+                                 AutomationProperties.Name="{x:Bind LinkLabel}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{x:Bind Label}"/>
+                        <FontIcon Glyph="&#xE8A7;" FontSize="12"
+                                  AutomationProperties.AccessibilityView="Raw"/>
+                    </StackPanel>
+                </HyperlinkButton>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <!-- The three tiers sit side by side once this page is 950 wide and stack below that. The
+         breakpoint is the page's width rather than the window's, so it holds whether or not the
+         navigation pane is expanded. Empty Auto rows collapse, so the wide layout costs nothing;
+         the narrow state adds its own margins rather than RowSpacing, which would apply either
+         way. The groups hang off the page's root element: on an inner element the triggers still
+         fire but nothing applies. -->
+    <Grid x:Name="PageRoot">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="NarrowTiers">
+                    <VisualState.StateTriggers>
+                        <toolkit:ControlSizeTrigger TargetElement="{x:Bind PageRoot}" MinWidth="0" MaxWidth="950"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SupporterCard.(Grid.ColumnSpan)" Value="3"/>
+                        <Setter Target="PatronCard.(Grid.Row)" Value="1"/>
+                        <Setter Target="PatronCard.(Grid.Column)" Value="0"/>
+                        <Setter Target="PatronCard.(Grid.ColumnSpan)" Value="3"/>
+                        <Setter Target="PatronCard.Margin" Value="0,16,0,0"/>
+                        <Setter Target="FounderCard.(Grid.Row)" Value="2"/>
+                        <Setter Target="FounderCard.(Grid.Column)" Value="0"/>
+                        <Setter Target="FounderCard.(Grid.ColumnSpan)" Value="3"/>
+                        <Setter Target="FounderCard.Margin" Value="0,16,0,0"/>
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideTiers">
+                    <VisualState.StateTriggers>
+                        <toolkit:ControlSizeTrigger TargetElement="{x:Bind PageRoot}" MinWidth="950"/>
+                    </VisualState.StateTriggers>
+                    <!-- Default markup already puts the three tiers in one row. -->
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Outside the scroller, so it stays put while the cards move under it. -->
+        <TextBlock Margin="36,24,36,0"
+                   MaxWidth="{StaticResource PageContentMaxWidth}"
+                   Text="Donate"
+                   Style="{StaticResource TitleTextBlockStyle}"
+                   AutomationProperties.HeadingLevel="Level1"/>
+
+        <!-- The inset goes on the content, not on the ScrollView: ScrollView.Padding shrinks the
+             viewport instead, which clips the content short of the edges and leaves dead bands. -->
+        <ScrollView Grid.Row="1">
+            <StackPanel Margin="36,16,36,36"
+                        MaxWidth="{StaticResource PageContentMaxWidth}"
+                        Spacing="32">
+
+                <TextBlock TextWrapping="Wrap"
+                           Text="SaveOver is free, and stays that way. Donations pay for the time behind new editors, for keeping the existing ones working when a patch changes a save format, and for helping people whose saves won't open."/>
+
+                <StackPanel Spacing="16">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Memberships"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                   AutomationProperties.HeadingLevel="Level2"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Text="Monthly support, with a few tiers. Each tier includes the rewards before it."/>
+                    </StackPanel>
+
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <ContentControl x:Name="SupporterCard"
+                                        Style="{StaticResource TierCardStyle}"
+                                        Content="{x:Bind Supporter}"/>
+                        <ContentControl x:Name="PatronCard"
+                                        Grid.Column="1"
+                                        Style="{StaticResource TierCardStyle}"
+                                        Content="{x:Bind Patron}"/>
+                        <ContentControl x:Name="FounderCard"
+                                        Grid.Column="2"
+                                        Style="{StaticResource TierCardStyle}"
+                                        Content="{x:Bind Founder}"/>
+                    </Grid>
+
+                    <InfoBar IsOpen="True"
+                             IsClosable="False"
+                             Severity="Informational"
+                             Title="DISCLAIMER"
+                             Message="Credits ship with every release as a CREDITS file, listing everyone under the years they supported. Nothing is removed once it's there, so your name stays whether or not you're still a member. Votes set priority, not promises: some save formats turn out to be locked tight, and ballots run on Discord or by email."/>
+
+                    <Border Style="{StaticResource CardBorderStyle}" Padding="24,20">
+                        <StackPanel Spacing="16">
+                            <TextBlock TextWrapping="Wrap"
+                                       Text="Join on whichever you already use. Same tiers, same perks, same Discord roles on all three. One-off tips are welcome there too."/>
+
+                            <!-- Logo plates don't wrap, so scroll instead of clipping. -->
+                            <ScrollView ContentOrientation="Horizontal"
+                                        HorizontalScrollBarVisibility="Auto"
+                                        VerticalScrollBarVisibility="Hidden"
+                                        VerticalScrollMode="Disabled">
+                                <ItemsRepeater ItemsSource="{x:Bind Platforms}"
+                                               ItemTemplate="{StaticResource PlatformTemplate}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Orientation="Horizontal" Spacing="16"/>
+                                    </ItemsRepeater.Layout>
+                                </ItemsRepeater>
+                            </ScrollView>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="Cryptocurrency"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                   AutomationProperties.HeadingLevel="Level2"/>
+
+                        <TextBlock TextWrapping="Wrap"
+                                   Text="Prefer crypto? You are welcome to send a donation to one of the wallet addresses below."/>
+
+                        <InfoBar IsOpen="True"
+                                 IsClosable="False"
+                                 Severity="Warning"
+                                 Title="No perks, and no refunds"
+                                 Message="A cryptocurrency donation cannot be tied back to a Discord account, so crypto doesn't unlock roles, votes, early builds, or credits. Transfers are final, so check the amount before you send."/>
+
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="Copy an address below, then check its first and last characters against what landed in your wallet app. Clipboard hijackers might swap addresses out."/>
+
+                        <ItemsRepeater ItemsSource="{x:Bind Wallets}"
+                                       ItemTemplate="{StaticResource WalletTemplate}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="8"/>
+                            </ItemsRepeater.Layout>
+                        </ItemsRepeater>
+
+                        <!-- A successful copy is the checkmark plus a notification event, so nothing
+                             is written here and the card doesn't accumulate status text. Only a
+                             failure surfaces, because then the checkmark never plays and the user
+                             would otherwise have no idea the address isn't on their clipboard. -->
+                        <InfoBar x:Name="CopyErrorInfoBar"
+                                 IsOpen="False"
+                                 Severity="Error"
+                                 Title="Couldn't copy"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="Other ways to help"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                   AutomationProperties.HeadingLevel="Level2"/>
+
+                        <TextBlock TextWrapping="Wrap"
+                                   Text="Donating is only one way to chip in. A precise bug report, a save file that reproduces something odd, or a pull request all move the project along just as much!"/>
+
+                        <ItemsRepeater ItemsSource="{x:Bind HelpLinks}"
+                                       ItemTemplate="{StaticResource HelpLinkTemplate}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Orientation="Horizontal" Spacing="12"/>
+                            </ItemsRepeater.Layout>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock TextWrapping="Wrap"
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                           Text="Thank you for supporting open-source software! &#x2764;"/>
+            </StackPanel>
+        </ScrollView>
+    </Grid>
+</Page>

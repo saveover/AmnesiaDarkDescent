@@ -1,60 +1,106 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>SaveOver.AmnesiaDarkDescent</RootNamespace>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Platforms>x86;x64;ARM64</Platforms>
-    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
-    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
-    <UseWinUI>true</UseWinUI>
-    <WinUISDKReferences>false</WinUISDKReferences>
-    <EnableMsixTooling>true</EnableMsixTooling>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="Assets\SplashScreen.scale-200.png" />
-    <Content Include="Assets\LockScreenLogo.scale-200.png" />
-    <Content Include="Assets\Square150x150Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Assets\StoreLogo.png" />
-    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
-  </ItemGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+		<UseWinUI>true</UseWinUI>
 
-  <ItemGroup>
-    <Manifest Include="$(ApplicationManifest)" />
-  </ItemGroup>
+		<Platforms>x86;x64;ARM64</Platforms>
+		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+		<Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
 
-  <!--
-    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
-    Tools extension to be activated for this project even if the Windows App SDK Nuget
-    package has not yet been restored.
-  -->
-  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
-    <ProjectCapability Include="Msix" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2526" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
-  </ItemGroup>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>Assets\AppIcons\AppIcon-Dark.ico</ApplicationIcon>
+		<EnableMsixTooling>true</EnableMsixTooling>
+		<WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+		<WindowsAppSdkIncludeVersionInfo>true</WindowsAppSdkIncludeVersionInfo>
 
-  <!--
-    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
-    Explorer "Package and Publish" context menu entry to be enabled for this project even if
-    the Windows App SDK Nuget package has not yet been restored.
-  -->
-  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
-    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
-  </PropertyGroup>
+		<SelfContained>true</SelfContained>
+		<PublishTrimmed>false</PublishTrimmed>
+		<PublishReadyToRun>false</PublishReadyToRun>
+		<!-- Prevent repository-local CI outputs from becoming inputs to a later single-file publish. -->
+		<DefaultItemExcludes>$(DefaultItemExcludes);publish\**;AppPackages\**;artifacts\**;dist\**</DefaultItemExcludes>
 
-  <!-- Publish Properties -->
-  <PropertyGroup>
-    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
-    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
-  </PropertyGroup>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<!-- A RuntimeIdentifier is required because packaged .NET apps include the .NET runtime. -->
+	<PropertyGroup Condition="'$(Platform)' == 'x86'">
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x86</RuntimeIdentifier>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Platform)' == 'x64'">
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Platform)' == 'ARM64'">
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-arm64</RuntimeIdentifier>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release'">
+		<PublishAppxPackage>true</PublishAppxPackage>
+	</PropertyGroup>
+
+	<!-- The Windows App SDK infers MSIX when Package.appxmanifest is present. -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug-Unpackaged' Or '$(Configuration)' == 'Release-Unpackaged'">
+		<WindowsPackageType>None</WindowsPackageType>
+		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
+		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+	</PropertyGroup>
+
+	<!-- Custom configurations do not inherit the SDK's Debug/Release compiler defaults. -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug-Unpackaged'">
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+		<DefineConstants>DEBUG;$(DefineConstants)</DefineConstants>
+		<MetadataUpdaterSupport>true</MetadataUpdaterSupport>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Release-Unpackaged'">
+		<DebugSymbols>false</DebugSymbols>
+		<DebugType>embedded</DebugType>
+		<Optimize>true</Optimize>
+		<DefineConstants>RELEASE;$(DefineConstants)</DefineConstants>
+		<MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Update="Assets\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+		<PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
+		<PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
+		<PackageReference Include="CommunityToolkit.WinUI.Triggers" Version="8.2.251219" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.10" />
+		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2526" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
+		<PackageReference Include="Serilog" Version="4.4.0" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<Version>1.0.0</Version>
+		<AssemblyName>SaveOver for Amnesia The Dark Descent</AssemblyName>
+		<AssemblyVersion>$(Version).0</AssemblyVersion>
+		<FileVersion>$(Version).0</FileVersion>
+		<InformationalVersion>$(Version).0</InformationalVersion>
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+		<AssemblyTitle>SaveOver for Amnesia: The Dark Descent</AssemblyTitle>
+		<Product>SaveOver for Amnesia: The Dark Descent</Product>
+		<Company>SaveOver</Company>
+		<Copyright>Copyright © SaveOver. All rights reserved.</Copyright>
+		<RepositoryUrl>https://github.com/saveover/AmnesiaDarkDescent</RepositoryUrl>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+
+	<Target Name="ValidateBuildDimensions" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+		<Error Condition="'$(Platform)' != 'x86' And '$(Platform)' != 'x64' And '$(Platform)' != 'ARM64'" Text="Unsupported platform '$(Platform)'. Specify x86, x64, or ARM64 (for example, -p:Platform=x64)." />
+		<Error Condition="'$(Configuration)' != 'Debug' And '$(Configuration)' != 'Release' And '$(Configuration)' != 'Debug-Unpackaged' And '$(Configuration)' != 'Release-Unpackaged'" Text="Unsupported configuration '$(Configuration)'. Specify Debug, Release, Debug-Unpackaged, or Release-Unpackaged." />
+	</Target>
+
 </Project>

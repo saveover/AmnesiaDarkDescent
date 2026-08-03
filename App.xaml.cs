@@ -1,48 +1,124 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 SaveOver
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
+using SaveOver.AmnesiaDarkDescent.Helpers;
+using System;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Windows.ApplicationModel;
 
 namespace SaveOver.AmnesiaDarkDescent;
+
 /// <summary>
-/// Provides application-specific behavior to supplement the default Application class.
+/// Owns process-lifetime services that must survive page caching and navigation. Keeping the
+/// logger factory and save session here prevents pages from creating competing baselines or
+/// diagnostic pipelines.
 /// </summary>
 public partial class App : Application
 {
-    private Window? _window;
+    private readonly ILogger<App> logger;
+
+    /// <summary>Shared so every component writes through the same retention and privacy policy.</summary>
+    internal static ILoggerFactory LoggerFactory { get; } = ApplicationLogging.CreateLoggerFactory();
+
+    /// <summary>Exposed because desktop pickers and helpers require the owning window identity.</summary>
+    internal static MainWindow? StartupWindow { get; private set; }
 
     /// <summary>
-    /// Initializes the singleton application object.  This is the first line of authored code
-    /// executed, and as such is the logical equivalent of main() or WinMain().
+    /// The shared save session. One instance for the app's lifetime, so any page can
+    /// subscribe to its <see cref="SaveSession.SaveDataChanged"/> event.
     /// </summary>
+    internal static SaveSession CurrentSaveData { get; } = new();
+
+    /// <summary>Registers failure logging before XAML initialization can execute user code.</summary>
     public App()
     {
+        logger = LoggerFactory.CreateLogger<App>();
+        LogSessionStarted();
+        logger.LogInformation("Application initialization started.");
+
+        UnhandledException += OnUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += OnCurrentDomainUnhandledException;
+        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
         InitializeComponent();
     }
 
     /// <summary>
-    /// Invoked when the application is launched.
+    /// Creates the window before applying helpers that depend on its XAML root, but applies them
+    /// before activation so the first rendered frame already has the stored appearance.
     /// </summary>
-    /// <param name="args">Details about the launch request and process.</param>
-    protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        _window = new MainWindow();
-        _window.Activate();
+        logger.LogInformation("Application launch started.");
+        StartupWindow = new MainWindow();
+
+        // After the window exists, since the theme and the navigation style are applied to it -
+        // and before it is shown, so the app never flashes the wrong theme or moves its own menu.
+        ThemeHelper.Initialize();
+        NavigationStyleHelper.Initialize();
+        SoundHelper.Initialize();
+
+        StartupWindow.Activate();
+        logger.LogInformation("Main window activated.");
+    }
+
+    private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs args) => logger.LogCritical(
+            args.Exception,
+            "Unhandled exception from {ExceptionSource}.",
+            "Microsoft.UI.Xaml.Application.UnhandledException");
+
+    private void OnCurrentDomainUnhandledException(object sender, System.UnhandledExceptionEventArgs args)
+    {
+        if (args.ExceptionObject is Exception exception)
+        {
+            logger.LogCritical(
+                exception,
+                "Unhandled exception from AppDomain.CurrentDomain.UnhandledException. Terminating: {IsTerminating}.",
+                args.IsTerminating);
+        }
+    }
+
+    private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs args) =>
+        logger.LogError(args.Exception, "An unobserved task exception reached TaskScheduler.");
+
+    private void OnProcessExit(object? sender, EventArgs args)
+    {
+        logger.LogInformation("Application session ended.");
+        LoggerFactory.Dispose();
+    }
+
+    private void LogSessionStarted()
+    {
+        Assembly assembly = typeof(App).Assembly;
+        string version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? assembly.GetName().Version?.ToString()
+            ?? "Unknown";
+
+        logger.LogInformation(
+            "Application session started. Version: {Version}; Deployment: {Deployment}; OS: {OperatingSystem}; " +
+            "Framework: {Framework}; Process architecture: {ProcessArchitecture}.",
+            version,
+            GetDeploymentKind(),
+            RuntimeInformation.OSDescription,
+            RuntimeInformation.FrameworkDescription,
+            RuntimeInformation.ProcessArchitecture);
+    }
+
+    private static string GetDeploymentKind()
+    {
+        try
+        {
+            return $"Packaged ({Package.Current.Id.Name})";
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            // Package.Current is the authoritative signal, but it throws rather than returning
+            // null when this same binary is launched from an unpackaged build.
+            return "Unpackaged";
+        }
     }
 }

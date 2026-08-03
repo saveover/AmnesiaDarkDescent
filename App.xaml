@@ -1,16 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 SaveOver -->
 <Application
     x:Class="SaveOver.AmnesiaDarkDescent.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:SaveOver.AmnesiaDarkDescent">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+
+            <!-- The TitleBar sits in its own row above the NavigationView rather than overlapping
+                 it, so the content needs no top margin to clear a title bar. -->
+            <Thickness x:Key="NavigationViewContentMargin">0</Thickness>
+            <Thickness x:Key="NavigationViewMinimalContentMargin">0</Thickness>
+            <Thickness x:Key="NavigationViewContentGridBorderThickness">1,1,0,0</Thickness>
+            <CornerRadius x:Key="NavigationViewContentGridCornerRadius">8,0,0,0</CornerRadius>
+
+            <!-- Keep page content readable on large windows without constraining the shell or
+                 responsive page roots. -->
+            <x:Double x:Key="PageContentMaxWidth">1100</x:Double>
+
+            <!-- Sharing the same card treatment keeps dense editor pages and informational pages
+                 visually related without duplicating theme-resource choices in every view. -->
+            <Style x:Key="CardBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="{StaticResource OverlayCornerRadius}"/>
+                <Setter Property="Padding" Value="24"/>
+            </Style>
+
+            <!-- Copyable values need stronger containment than surrounding prose without looking
+                 like editable text fields. -->
+            <Style x:Key="InsetBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource LayerFillColorDefaultBrush}"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}"/>
+                <Setter Property="Padding" Value="12,8"/>
+            </Style>
+
+            <!-- Paths and wallet addresses use a selection-enabled monospace treatment so users
+                 can distinguish exact characters before copying them. -->
+            <Style x:Key="MonospaceTextBlockStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+                <Setter Property="IsTextSelectionEnabled" Value="True"/>
+            </Style>
+
+            <!-- Compact icon actions share one hit target even when their glyph metrics differ. -->
+            <Style x:Key="IconButtonStyle" TargetType="Button">
+                <Setter Property="Padding" Value="8"/>
+                <Setter Property="CornerRadius" Value="4"/>
+            </Style>
+
+            <!-- Extra leading space separates settings groups while keeping the first row close
+                 enough to its heading to preserve their relationship. -->
+            <Style x:Key="SettingsSectionHeaderTextBlockStyle"
+                   BasedOn="{StaticResource BodyStrongTextBlockStyle}"
+                   TargetType="TextBlock">
+                <Setter Property="Margin" Value="1,28,0,4"/>
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

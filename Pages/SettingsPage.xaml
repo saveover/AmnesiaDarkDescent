@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 SaveOver -->
+<Page
+    x:Class="SaveOver.AmnesiaDarkDescent.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
+    NavigationCacheMode="Enabled">
+
+    <!-- The title lives outside the scroller so it stays put while the rows move under it. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title and rows share a MaxWidth and stretch, so the pair centres as one block on a wide
+             window and the title stays lined up with the cards under it. -->
+        <TextBlock Margin="36,24,36,0"
+                   MaxWidth="{StaticResource PageContentMaxWidth}"
+                   Text="Settings"
+                   Style="{StaticResource TitleTextBlockStyle}"
+                   AutomationProperties.HeadingLevel="Level1"/>
+
+        <!-- The inset goes on the content, not on the ScrollView: ScrollView.Padding shrinks the
+             viewport instead, which clips the content short of the edges and leaves dead bands. -->
+        <ScrollView Grid.Row="1">
+            <StackPanel Margin="36,0,36,36"
+                        MaxWidth="{StaticResource PageContentMaxWidth}"
+                        Spacing="4">
+
+                <TextBlock Text="Appearance and behaviour"
+                           Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
+                           AutomationProperties.HeadingLevel="Level2"/>
+
+                <toolkit:SettingsCard Header="App theme"
+                                      Description="Select which app theme to display">
+                    <toolkit:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE790;" AutomationProperties.AccessibilityView="Raw"/>
+                    </toolkit:SettingsCard.HeaderIcon>
+                    <!-- Tags are ElementTheme names, parsed back on selection. -->
+                    <ComboBox x:Name="ThemeComboBox"
+                              SelectedValuePath="Tag"
+                              AutomationProperties.Name="App theme"
+                              SelectionChanged="ThemeComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Light" Tag="Light"/>
+                        <ComboBoxItem Content="Dark" Tag="Dark"/>
+                        <ComboBoxItem Content="Use system setting" Tag="Default"/>
+                    </ComboBox>
+                </toolkit:SettingsCard>
+
+                <toolkit:SettingsCard Header="Navigation style"
+                                      Description="Where the navigation items sit">
+                    <toolkit:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xF594;" AutomationProperties.AccessibilityView="Raw"/>
+                    </toolkit:SettingsCard.HeaderIcon>
+                    <ComboBox x:Name="NavigationStyleComboBox"
+                              SelectionChanged="NavigationStyleComboBox_SelectionChanged"
+                              AutomationProperties.Name="Navigation style">
+                        <ComboBoxItem Content="Left"/>
+                        <ComboBoxItem Content="Top"/>
+                    </ComboBox>
+                </toolkit:SettingsCard>
+
+                <!-- Spatial audio only means anything while the sounds are on, so it lives inside
+                     the row that switches them rather than beside it. -->
+                <toolkit:SettingsExpander Header="Sound"
+                                          Description="Controls provide audible feedback">
+                    <toolkit:SettingsExpander.HeaderIcon>
+                        <FontIcon Glyph="&#xEC4F;" AutomationProperties.AccessibilityView="Raw"/>
+                    </toolkit:SettingsExpander.HeaderIcon>
+                    <ToggleSwitch x:Name="SoundToggleSwitch"
+                                  AutomationProperties.Name="Sound"
+                                  Toggled="SoundToggleSwitch_Toggled"/>
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard x:Name="SpatialAudioCard"
+                                              Header="Enable Spatial Audio"
+                                              IsEnabled="False">
+                            <toolkit:SettingsCard.Description>
+                                <HyperlinkButton Content="How to turn on spatial sound in Windows"
+                                                 NavigateUri="https://support.microsoft.com/en-US/Windows/Hardware/Drivers/how-to-turn-on-spatial-sound-in-windows"
+                                                 AutomationProperties.Name="How to turn on spatial sound in Windows (opens in your browser)"/>
+                            </toolkit:SettingsCard.Description>
+                            <ToggleSwitch x:Name="SpatialAudioToggleSwitch"
+                                          AutomationProperties.Name="Spatial audio"
+                                          Toggled="SpatialAudioToggleSwitch_Toggled"/>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+
+                <TextBlock Text="Save games"
+                           Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
+                           AutomationProperties.HeadingLevel="Level2"/>
+
+                <toolkit:SettingsCard Header="Backup folder">
+                    <toolkit:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE8B7;" AutomationProperties.AccessibilityView="Raw"/>
+                    </toolkit:SettingsCard.HeaderIcon>
+                    <toolkit:SettingsCard.Description>
+                        <TextBlock x:Name="BackupFolderTextBlock"
+                                   TextWrapping="Wrap"
+                                   IsTextSelectionEnabled="True"/>
+                    </toolkit:SettingsCard.Description>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Choose"
+                                Click="ChooseBackupFolderButton_Click"
+                                AutomationProperties.Name="Choose backup folder"/>
+                        <Button Content="Open"
+                                Click="OpenBackupFolderButton_Click"
+                                AutomationProperties.Name="Open backup folder"/>
+                        <Button Content="Reset"
+                                Click="ResetBackupFolderButton_Click"
+                                AutomationProperties.Name="Reset backup folder to default"/>
+                    </StackPanel>
+                </toolkit:SettingsCard>
+
+                <toolkit:SettingsCard Header="Backup retention"
+                                      Description="Maximum backups kept per save file">
+                    <toolkit:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE823;" AutomationProperties.AccessibilityView="Raw"/>
+                    </toolkit:SettingsCard.HeaderIcon>
+                    <ComboBox x:Name="BackupRetentionComboBox"
+                              SelectedValuePath="Tag"
+                              SelectionChanged="BackupRetentionComboBox_SelectionChanged"
+                              AutomationProperties.Name="Backup retention">
+                        <ComboBoxItem Content="Keep latest 5" Tag="5"/>
+                        <ComboBoxItem Content="Keep latest 10" Tag="10"/>
+                        <ComboBoxItem Content="Keep latest 20" Tag="20"/>
+                        <ComboBoxItem Content="Keep all" Tag="0"/>
+                    </ComboBox>
+                </toolkit:SettingsCard>
+
+                <toolkit:SettingsCard Header="Confirm before saving"
+                                      Description="Ask before the original save file is replaced">
+                    <toolkit:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE9D9;" AutomationProperties.AccessibilityView="Raw"/>
+                    </toolkit:SettingsCard.HeaderIcon>
+                    <ToggleSwitch x:Name="SaveConfirmationToggleSwitch"
+                                  Toggled="SaveConfirmationToggleSwitch_Toggled"
+                                  AutomationProperties.Name="Confirm before saving"/>
+                </toolkit:SettingsCard>
+
+                <toolkit:SettingsCard Header="Remember last opened save"
+                                      Description="Offer to reopen the most recently loaded save when SaveOver starts">
+                    <toolkit:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE72C;" AutomationProperties.AccessibilityView="Raw"/>
+                    </toolkit:SettingsCard.HeaderIcon>
+                    <ToggleSwitch x:Name="ResumeLastSaveToggleSwitch"
+                                  Toggled="ResumeLastSaveToggleSwitch_Toggled"
+                                  AutomationProperties.Name="Remember last opened save"/>
+                </toolkit:SettingsCard>
+
+                <TextBlock Text="Diagnostics"
+                           Style="{StaticResource SettingsSectionHeaderTextBlockStyle}"
+                           AutomationProperties.HeadingLevel="Level2"/>
+
+                <toolkit:SettingsCard Header="Application logs">
+                    <toolkit:SettingsCard.HeaderIcon>
+                        <SymbolIcon Symbol="Document"
+                                    AutomationProperties.AccessibilityView="Raw"/>
+                    </toolkit:SettingsCard.HeaderIcon>
+                    <toolkit:SettingsCard.Description>
+                        <TextBlock x:Name="ApplicationLogsDescriptionTextBlock"
+                                   Text="Open the logs folder and attach the newest .log file when reporting a problem. Save contents are never logged."
+                                   TextWrapping="Wrap"/>
+                    </toolkit:SettingsCard.Description>
+                    <Button Content="Open logs folder"
+                            Click="OpenApplicationLogsFolderButton_Click"
+                            AutomationProperties.Name="Open application logs folder"
+                            AutomationProperties.AutomationId="OpenApplicationLogsFolderButton"/>
+                </toolkit:SettingsCard>
+
+                <toolkit:SettingsExpander x:Name="AboutExpander"
+                                          Header="SaveOver for Amnesia: The Dark Descent">
+                    <toolkit:SettingsExpander.HeaderIcon>
+                        <ImageIcon Source="ms-appx:///Assets/AppIcons/AppIcon-Dark.ico"/>
+                    </toolkit:SettingsExpander.HeaderIcon>
+                    <TextBlock x:Name="VersionTextBlock"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               IsTextSelectionEnabled="True"/>
+
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard Header="To clone this repository">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock x:Name="CloneCommandTextBlock"
+                                           Text="git clone https://github.com/saveover/AmnesiaDarkDescent"
+                                           Style="{StaticResource MonospaceTextBlockStyle}"
+                                           VerticalAlignment="Center"/>
+
+                                <Button Style="{StaticResource IconButtonStyle}"
+                                        VerticalAlignment="Center"
+                                        Click="CopyCloneCommandButton_Click"
+                                        AutomationProperties.Name="Copy the clone command"
+                                        ToolTipService.ToolTip="Copy the clone command">
+                                    <Grid>
+                                        <FontIcon Glyph="&#xE8C8;" FontSize="14"
+                                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                  AutomationProperties.AccessibilityView="Raw"/>
+                                        <FontIcon Glyph="&#xE73E;" FontSize="14" Opacity="0"
+                                                  Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                                  AutomationProperties.AccessibilityView="Raw"/>
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
+                        </toolkit:SettingsCard>
+
+                        <toolkit:SettingsCard Header="Report a bug or request a feature"
+                                              Description="Attach the newest application log if something went wrong"
+                                              IsClickEnabled="True"
+                                              Click="ReportIssueCard_Click">
+                            <toolkit:SettingsCard.ActionIcon>
+                                <FontIcon Glyph="&#xE8A7;" FontSize="14" AutomationProperties.AccessibilityView="Raw"/>
+                            </toolkit:SettingsCard.ActionIcon>
+                        </toolkit:SettingsCard>
+
+                        <toolkit:SettingsCard Header="Dependencies and references"
+                                              HorizontalContentAlignment="Left"
+                                              ContentAlignment="Vertical">
+                            <StackPanel Margin="-12,0,0,0">
+                                <HyperlinkButton Content="Windows App SDK 2.3" NavigateUri="https://aka.ms/windowsappsdk"/>
+                                <HyperlinkButton Content="WinUI 3" NavigateUri="https://aka.ms/winui"/>
+                                <HyperlinkButton Content="Windows Community Toolkit" NavigateUri="https://aka.ms/windowstoolkitdocs"/>
+                                <HyperlinkButton Content=".NET 10" NavigateUri="https://dotnet.microsoft.com/"/>
+                            </StackPanel>
+                        </toolkit:SettingsCard>
+
+                        <toolkit:SettingsCard Header="Free software under the GNU General Public License, version 3 or later. It comes with no warranty: always keep a backup of a save before editing it."
+                                              HorizontalContentAlignment="Left"
+                                              ContentAlignment="Vertical">
+                            <StackPanel Margin="-12,0,0,0">
+                                <HyperlinkButton Content="Read the licence" NavigateUri="https://github.com/saveover/AmnesiaDarkDescent/blob/master/LICENSE.txt"/>
+                                <HyperlinkButton Content="Browse the source" NavigateUri="https://github.com/saveover/AmnesiaDarkDescent"/>
+                            </StackPanel>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+            </StackPanel>
+        </ScrollView>
+    </Grid>
+</Page>
